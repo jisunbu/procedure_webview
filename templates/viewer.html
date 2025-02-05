@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ filename }} - 문서 뷰어</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .viewer-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 95%;
+        }
+        .file-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .file-title {
+            font-size: 1.5rem;
+            color: #333;
+        }
+        .file-type-badge {
+            font-size: 0.9rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 3px;
+            background-color: #e9ecef;
+            color: #495057;
+            margin-left: 10px;
+        }
+        /* Excel 테이블 스타일 */
+        .table {
+            width: 100%;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(0,0,0,.075);
+        }
+        /* 스크롤 테이블 */
+        .table-responsive {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        /* Word 문서 스타일 */
+        .word-content {
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .word-heading {
+            color: #2c3e50;
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+        }
+        
+        .word-content h1 { font-size: 2em; }
+        .word-content h2 { font-size: 1.75em; }
+        .word-content h3 { font-size: 1.5em; }
+        .word-content h4 { font-size: 1.25em; }
+        
+        .word-content p {
+            margin-bottom: 1em;
+            text-align: justify;
+        }
+        
+        .word-content .text-center { text-align: center; }
+        .word-content .text-end { text-align: right; }
+        
+        .word-content table {
+            margin: 1em 0;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .word-content th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .word-content th, .word-content td {
+            padding: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .word-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 1em 0;
+        }
+        
+        /* 인쇄 스타일 */
+        @media print {
+            .back-button { display: none; }
+            .word-content {
+                max-width: none;
+                padding: 0;
+            }
+        }
+        /* 뒤로가기 버튼 */
+        .back-button {
+            margin-bottom: 20px;
+        }
+        /* 파일 액션 버튼 스타일 */
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .file-actions .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .file-actions .btn i {
+            font-size: 0.9em;
+        }
+        
+        /* 다운로드 버튼 호버 효과 */
+        .file-actions .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+        
+        /* 모바일 반응형 */
+        @media (max-width: 576px) {
+            .file-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .file-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="back-button">
+            <a href="/" class="btn btn-secondary">&larr; 목록으로 돌아가기</a>
+        </div>
+        <div class="viewer-container">
+            <div class="file-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="file-title">{{ filename }}</span>
+                        <span class="file-type-badge">{{ file_type.upper() }}</span>
+                    </div>
+                    <div class="file-actions">
+                        <a href="{{ url_for('download_file', filename=filename) }}" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-download"></i> 다운로드
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="content-wrapper">
+                {% if file_type in ['xlsx', 'xls'] %}
+                    <div class="table-responsive">
+                        {{ content | safe }}
+                    </div>
+                {% else %}
+                    <div class="word-content">
+                        {{ content | safe }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
