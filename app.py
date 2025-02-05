@@ -22,17 +22,33 @@ def create_app(config_name='default'):
         static_folder='static'        # 정적 파일 폴더 경로 명시
     )
     app.config.from_object(config[config_name])
-
-    # 업로드 폴더가 없으면 생성
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-
+    
+    # 절대 경로 설정
+    if not os.path.isabs(app.config['UPLOAD_FOLDER']):
+        app.config['UPLOAD_FOLDER'] = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            app.config['UPLOAD_FOLDER']
+        )
+    
+    # 업로드 폴더 생성
+    try:
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        print(f"Upload folder created/verified: {app.config['UPLOAD_FOLDER']}")
+        
+        # 테스트 파일 생성 (디버깅용)
+        test_file = os.path.join(app.config['UPLOAD_FOLDER'], 'test.txt')
+        with open(test_file, 'w') as f:
+            f.write('Test file for debugging')
+        print(f"Test file created: {test_file}")
+    except Exception as e:
+        print(f"Error creating upload folder: {str(e)}")
+    
     return app
 
 app = create_app(os.getenv('FLASK_ENV', 'production'))
 
 # 문서 저장 경로와 허용된 파일 확장자 설정
-UPLOAD_FOLDER = 'documents/company_docs'
+UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'documents/company_docs')
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'xlsx', 'xls'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -73,23 +89,35 @@ def read_excel(file_path):
 @app.route('/')
 def index():
     try:
-        # 폴더가 없으면 생성
+        # 폴더 경로 출력 (디버깅용)
+        print(f"Current UPLOAD_FOLDER: {app.config['UPLOAD_FOLDER']}")
+        
+        # 폴더 존재 확인
         if not os.path.exists(app.config['UPLOAD_FOLDER']):
-            os.makedirs(app.config['UPLOAD_FOLDER'])
-            
-        # 단순화된 파일 목록 반환
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            print(f"Created upload folder: {app.config['UPLOAD_FOLDER']}")
+        
+        # 폴더 내용 출력 (디버깅용)
+        print("Directory contents:")
+        for root, dirs, files in os.walk(app.config['UPLOAD_FOLDER']):
+            print(f"Root: {root}")
+            print(f"Dirs: {dirs}")
+            print(f"Files: {files}")
+        
         files = []
         for filename in os.listdir(app.config['UPLOAD_FOLDER']):
             if allowed_file(filename):
                 files.append(filename)
         
-        # 파일명으로 정렬
         files.sort()
+        print(f"Found {len(files)} files")
         
         return render_template('index.html', files=files)
     except Exception as e:
-        print(f"Error in index route: {str(e)}")  # 로깅 추가
-        return render_template('index.html', files=[], error=str(e))
+        print(f"Error in index route: {str(e)}")
+        return render_template('index.html', 
+                             files=[], 
+                             error=f"Error: {str(e)}")
 
 # 파일 보기 라우트
 @app.route('/view/<filename>')
@@ -195,3 +223,21 @@ def upload_file():
     except Exception as e:
         print(f"Error uploading file: {str(e)}")
         return jsonify({'error': f'파일 업로드 중 오류가 발생했습니다: {str(e)}'}), 500
+
+@app.route('/test-upload', methods=['GET'])
+def test_upload():
+    try:
+        test_file = os.path.join(app.config['UPLOAD_FOLDER'], 'test.pdf')
+        with open(test_file, 'w') as f:
+            f.write('Test PDF content')
+        return jsonify({
+            'success': True,
+            'message': f'Test file created at {test_file}',
+            'folder': app.config['UPLOAD_FOLDER'],
+            'files': os.listdir(app.config['UPLOAD_FOLDER'])
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
