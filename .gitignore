@@ -33,6 +33,10 @@ ENV/
 # 업로드된 문서
 documents/company_docs/*
 !documents/company_docs/.gitkeep
+!documents/company_docs/*.pdf
+!documents/company_docs/*.docx
+!documents/company_docs/*.xlsx
+!documents/company_docs/*.xls
 
 # 로그 파일
 *.log

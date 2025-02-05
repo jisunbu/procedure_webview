@@ -17,31 +17,24 @@ from PIL import Image
 from config import config
 
 def create_app(config_name='default'):
-    app = Flask(__name__, 
-        template_folder='templates',  # 템플릿 폴더 경로 명시
-        static_folder='static'        # 정적 파일 폴더 경로 명시
-    )
+    app = Flask(__name__)
     app.config.from_object(config[config_name])
     
-    # 절대 경로 설정
+    # 업로드 폴더 설정
+    upload_folder = os.getenv('UPLOAD_FOLDER', 'documents/company_docs')
+    app.config['UPLOAD_FOLDER'] = upload_folder
+    
+    # 절대 경로로 변환
     if not os.path.isabs(app.config['UPLOAD_FOLDER']):
         app.config['UPLOAD_FOLDER'] = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             app.config['UPLOAD_FOLDER']
         )
     
-    # 업로드 폴더 생성
-    try:
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-        print(f"Upload folder created/verified: {app.config['UPLOAD_FOLDER']}")
-        
-        # 테스트 파일 생성 (디버깅용)
-        test_file = os.path.join(app.config['UPLOAD_FOLDER'], 'test.txt')
-        with open(test_file, 'w') as f:
-            f.write('Test file for debugging')
-        print(f"Test file created: {test_file}")
-    except Exception as e:
-        print(f"Error creating upload folder: {str(e)}")
+    print(f"Upload folder path: {app.config['UPLOAD_FOLDER']}")
+    
+    # 폴더 생성
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
     return app
 
@@ -241,3 +234,21 @@ def test_upload():
             'success': False,
             'error': str(e)
         })
+
+@app.route('/debug-info')
+def debug_info():
+    try:
+        upload_folder = app.config['UPLOAD_FOLDER']
+        files = os.listdir(upload_folder) if os.path.exists(upload_folder) else []
+        
+        return jsonify({
+            'upload_folder': upload_folder,
+            'folder_exists': os.path.exists(upload_folder),
+            'files': files,
+            'env_vars': {
+                'FLASK_ENV': os.getenv('FLASK_ENV'),
+                'UPLOAD_FOLDER': os.getenv('UPLOAD_FOLDER')
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
